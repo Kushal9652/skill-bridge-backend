@@ -143,6 +143,7 @@ class APIClient {
   }
 
   async getProjectApplications(projectId) {
+    // Note: Backend expects projectId in body for GET request (non-standard but required)
     return this.request('/applications', {
       method: 'GET',
       body: JSON.stringify({ projectId }),
