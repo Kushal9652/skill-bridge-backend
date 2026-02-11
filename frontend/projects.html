@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse Projects - SkillBridge</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">SkillBridge</div>
+      <ul class="nav-links"></ul>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 2rem 0;">
+      <div class="container">
+        <h1 class="mb-2" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Browse Projects</h1>
+        
+        <!-- Filters -->
+        <div class="card mb-2">
+          <h3 class="mb-1">Filters</h3>
+          <div class="grid grid-3">
+            <div class="form-group">
+              <label for="status">Status</label>
+              <select id="status" class="form-control">
+                <option value="">All</option>
+                <option value="open">Open</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="minBudget">Min Budget</label>
+              <input type="number" id="minBudget" class="form-control" placeholder="Min">
+            </div>
+
+            <div class="form-group">
+              <label for="maxBudget">Max Budget</label>
+              <input type="number" id="maxBudget" class="form-control" placeholder="Max">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="skills">Skills (comma-separated)</label>
+            <input type="text" id="skills" class="form-control" placeholder="e.g., JavaScript, Python">
+          </div>
+
+          <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
+          <button id="clear-filters" class="btn btn-outline">Clear</button>
+        </div>
+
+        <!-- Projects Grid -->
+        <div id="projects-container" class="grid grid-2"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    let projects = [];
+
+    async function loadProjects(filters = {}) {
+      UI.showLoading();
+      try {
+        const response = await api.getAllProjects(filters);
+        projects = response.data || response.projects || response;
+        renderProjects();
+      } catch (error) {
+        UI.showAlert('Failed to load projects', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    }
+
+    function renderProjects() {
+      const container = document.getElementById('projects-container');
+      
+      if (projects.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted" style="grid-column: 1 / -1;">No projects found</p>';
+        return;
+      }
+
+      container.innerHTML = projects.map(project => `
+        <div class="card">
+          <div class="flex-between mb-1">
+            <h3 style="color: var(--primary-light);">${project.title}</h3>
+            <span class="badge ${UI.getStatusBadgeClass(project.status)}">${project.status}</span>
+          </div>
+          <p class="text-muted mb-1">${UI.truncateText(project.description, 150)}</p>
+          <div class="mb-1">
+            ${UI.renderSkillTags(project.requiredSkills)}
+          </div>
+          <div class="flex-between" style="align-items: center;">
+            <div>
+              <strong style="color: var(--success-color); font-size: 1.25rem;">${UI.formatCurrency(project.budget)}</strong>
+              <p class="text-muted" style="font-size: 0.875rem;">Deadline: ${UI.formatDate(project.deadline)}</p>
+            </div>
+            <a href="/project-detail.html?id=${project._id}" class="btn btn-primary">View Details</a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('apply-filters').addEventListener('click', () => {
+      const filters = {};
+      
+      const status = document.getElementById('status').value;
+      if (status) filters.status = status;
+      
+      const minBudget = document.getElementById('minBudget').value;
+      if (minBudget) filters.minBudget = minBudget;
+      
+      const maxBudget = document.getElementById('maxBudget').value;
+      if (maxBudget) filters.maxBudget = maxBudget;
+      
+      const skills = document.getElementById('skills').value;
+      if (skills) filters.skills = skills;
+      
+      loadProjects(filters);
+    });
+
+    document.getElementById('clear-filters').addEventListener('click', () => {
+      document.getElementById('status').value = '';
+      document.getElementById('minBudget').value = '';
+      document.getElementById('maxBudget').value = '';
+      document.getElementById('skills').value = '';
+      loadProjects();
+    });
+
+    // Initial load
+    loadProjects();
+  </script>
+</body>
+</html>

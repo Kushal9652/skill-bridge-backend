@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Details - SkillBridge</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">SkillBridge</div>
+      <ul class="nav-links"></ul>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 2rem 0;">
+      <div class="container">
+        <a href="/projects.html" style="color: var(--primary-light); text-decoration: none; display: inline-block; margin-bottom: 1rem;">&larr; Back to Projects</a>
+        
+        <div id="project-content"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Application Modal -->
+  <div id="application-modal" class="modal">
+    <div class="modal-content">
+      <h2 class="mb-1">Apply to Project</h2>
+      <form id="application-form">
+        <div class="form-group">
+          <label for="resume">Upload Resume (PDF)</label>
+          <input type="file" id="resume" class="form-control" accept=".pdf" required>
+          <small class="text-muted">Max size: 5MB</small>
+        </div>
+        <div class="flex gap-1">
+          <button type="submit" class="btn btn-primary">Submit Application</button>
+          <button type="button" class="btn btn-outline" id="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('id');
+
+    if (!projectId) {
+      window.location.href = '/projects.html';
+    }
+
+    let project = null;
+
+    async function loadProject() {
+      UI.showLoading();
+      try {
+        const response = await api.getProject(projectId);
+        project = response.data || response.project || response;
+        renderProject();
+      } catch (error) {
+        UI.showAlert('Failed to load project details', 'error');
+        setTimeout(() => window.location.href = '/projects.html', 2000);
+      } finally {
+        UI.hideLoading();
+      }
+    }
+
+    function renderProject() {
+      const container = document.getElementById('project-content');
+      const isStudent = auth.isStudent();
+      const isClient = auth.isClient();
+      const isOwner = isClient && project.createdBy === auth.getUser()?._id;
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="flex-between mb-2">
+            <h1 style="color: var(--primary-light);">${project.title}</h1>
+            <span class="badge ${UI.getStatusBadgeClass(project.status)}">${project.status}</span>
+          </div>
+
+          <div class="grid grid-2 mb-2">
+            <div>
+              <h3 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 0.5rem;">Budget</h3>
+              <p style="font-size: 2rem; color: var(--success-color); font-weight: bold;">${UI.formatCurrency(project.budget)}</p>
+            </div>
+            <div>
+              <h3 style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 0.5rem;">Deadline</h3>
+              <p style="font-size: 1.5rem; color: var(--text-primary);">${UI.formatDate(project.deadline)}</p>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Description</h3>
+            <p style="line-height: 1.8;">${project.description}</p>
+          </div>
+
+          <div class="mb-2">
+            <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Required Skills</h3>
+            ${UI.renderSkillTags(project.requiredSkills)}
+          </div>
+
+          ${isStudent && project.status === 'open' ? `
+            <button id="apply-btn" class="btn btn-primary">Apply to This Project</button>
+          ` : ''}
+
+          ${isOwner ? `
+            <div class="flex gap-1 mt-2">
+              <button id="edit-btn" class="btn btn-primary">Edit Project</button>
+              <button id="delete-btn" class="btn btn-danger">Delete Project</button>
+              <a href="/applications.html?projectId=${project._id}" class="btn btn-outline">View Applications</a>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      // Apply button handler
+      const applyBtn = document.getElementById('apply-btn');
+      if (applyBtn) {
+        applyBtn.addEventListener('click', () => {
+          document.getElementById('application-modal').classList.add('active');
+        });
+      }
+
+      // Edit button handler
+      const editBtn = document.getElementById('edit-btn');
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          window.location.href = `/edit-project.html?id=${project._id}`;
+        });
+      }
+
+      // Delete button handler
+      const deleteBtn = document.getElementById('delete-btn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+          if (confirm('Are you sure you want to delete this project?')) {
+            try {
+              await api.deleteProject(project._id);
+              UI.showAlert('Project deleted successfully', 'success');
+              setTimeout(() => window.location.href = '/dashboard-client.html', 1500);
+            } catch (error) {
+              UI.showAlert('Failed to delete project', 'error');
+            }
+          }
+        });
+      }
+    }
+
+    // Close modal
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('application-modal').classList.remove('active');
+    });
+
+    // Submit application
+    document.getElementById('application-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const resumeFile = document.getElementById('resume').files[0];
+      
+      if (resumeFile.size > 5 * 1024 * 1024) {
+        UI.showAlert('Resume file size must be less than 5MB', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('projectId', projectId);
+      formData.append('resume', resumeFile);
+
+      UI.showLoading();
+      try {
+        await api.createApplication(formData);
+        UI.showAlert('Application submitted successfully!', 'success');
+        document.getElementById('application-modal').classList.remove('active');
+        document.getElementById('application-form').reset();
+      } catch (error) {
+        UI.showAlert(error.message || 'Failed to submit application', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    });
+
+    // Initial load
+    if (auth.isAuthenticated()) {
+      loadProject();
+    } else {
+      UI.showAlert('Please login to view project details', 'info');
+      setTimeout(() => window.location.href = '/login.html', 2000);
+    }
+  </script>
+</body>
+</html>
