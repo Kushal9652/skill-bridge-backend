@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - SkillBridge</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">SkillBridge</div>
+      <ul class="nav-links"></ul>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 2rem 0;">
+      <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+          <h1 class="mb-2" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">My Profile</h1>
+          
+          <div class="card mb-2">
+            <h2 class="mb-1">Basic Information</h2>
+            <div class="grid grid-2">
+              <div>
+                <p class="text-muted">Username</p>
+                <p style="font-weight: 600;" id="username"></p>
+              </div>
+              <div>
+                <p class="text-muted">Email</p>
+                <p style="font-weight: 600;" id="email"></p>
+              </div>
+              <div>
+                <p class="text-muted">Role</p>
+                <p style="font-weight: 600; text-transform: capitalize;" id="role"></p>
+              </div>
+              <div>
+                <p class="text-muted">Member Since</p>
+                <p style="font-weight: 600;" id="member-since"></p>
+              </div>
+            </div>
+          </div>
+
+          <div id="profile-details" class="card mb-2"></div>
+
+          <button id="edit-profile-btn" class="btn btn-primary">Edit Profile</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Edit Profile Modal -->
+  <div id="edit-profile-modal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <h2 class="mb-1">Edit Profile</h2>
+      <form id="edit-profile-form">
+        <div class="form-group">
+          <label for="userImage">Update Profile Image (optional)</label>
+          <input type="file" id="userImage" class="form-control" accept="image/*">
+        </div>
+
+        <div id="student-edit-fields" style="display: none;">
+          <div class="form-group">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="skills">Skills (comma-separated)</label>
+            <input type="text" id="skills" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" class="form-control"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="portfolioLinks">Portfolio Links (comma-separated)</label>
+            <input type="text" id="portfolioLinks" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="availability">Availability</label>
+            <select id="availability" class="form-control">
+              <option value="10hrs/week">10 hours/week</option>
+              <option value="15hrs/week">15 hours/week</option>
+              <option value="20hrs/week">20 hours/week</option>
+              <option value="24hrs/week">24+ hours/week</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="client-edit-fields" style="display: none;">
+          <div class="form-group">
+            <label for="orgName">Organization Name</label>
+            <input type="text" id="orgName" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="orgDescription">Organization Description</label>
+            <textarea id="orgDescription" class="form-control"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="linkedin">LinkedIn (optional)</label>
+            <input type="url" id="linkedin" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="twitter">Twitter (optional)</label>
+            <input type="url" id="twitter" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="website">Website (optional)</label>
+            <input type="url" id="website" class="form-control">
+          </div>
+        </div>
+
+        <div class="flex gap-1">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <button type="button" class="btn btn-outline" id="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    if (!auth.requireAuth()) {
+      throw new Error('Access denied');
+    }
+
+    const user = auth.getUser();
+    let profileData = null;
+
+    async function loadProfile() {
+      UI.showLoading();
+      try {
+        const response = await api.getUserProfile(user._id);
+        profileData = response.data || response.user || response;
+        renderProfile();
+      } catch (error) {
+        UI.showAlert('Failed to load profile', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    }
+
+    function renderProfile() {
+      // Basic info
+      document.getElementById('username').textContent = profileData.username;
+      document.getElementById('email').textContent = profileData.email;
+      document.getElementById('role').textContent = profileData.role;
+      document.getElementById('member-since').textContent = UI.formatDate(profileData.createdAt);
+
+      // Role-specific details
+      const detailsContainer = document.getElementById('profile-details');
+      
+      if (profileData.role === 'student' && profileData.studentProfile) {
+        const profile = profileData.studentProfile;
+        detailsContainer.innerHTML = `
+          <h2 class="mb-1">Student Profile</h2>
+          <div class="mb-1">
+            <img src="${profile.profileImageUrl}" alt="Profile" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-color);">
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Full Name</p>
+            <p style="font-weight: 600;">${profile.fullName}</p>
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Bio</p>
+            <p>${profile.bio}</p>
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Skills</p>
+            ${UI.renderSkillTags(profile.skills)}
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Availability</p>
+            <p style="font-weight: 600;">${profile.availability}</p>
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Portfolio Links</p>
+            ${profile.portfolioLinks.map(link => 
+              `<a href="${link}" target="_blank" style="color: var(--primary-light); display: block;">${link}</a>`
+            ).join('')}
+          </div>
+        `;
+      } else if (profileData.role === 'client' && profileData.clientProfile) {
+        const profile = profileData.clientProfile;
+        detailsContainer.innerHTML = `
+          <h2 class="mb-1">Client Profile</h2>
+          <div class="mb-1">
+            <img src="${profile.orgLogoUrl}" alt="Logo" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid var(--secondary-color);">
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Organization Name</p>
+            <p style="font-weight: 600;">${profile.orgName}</p>
+          </div>
+          <div class="mb-1">
+            <p class="text-muted">Description</p>
+            <p>${profile.orgDescription}</p>
+          </div>
+          ${profile.socialLinks ? `
+            <div class="mb-1">
+              <p class="text-muted">Social Links</p>
+              ${profile.socialLinks.linkedin ? `<a href="${profile.socialLinks.linkedin}" target="_blank" style="color: var(--primary-light); display: block;">LinkedIn</a>` : ''}
+              ${profile.socialLinks.twitter ? `<a href="${profile.socialLinks.twitter}" target="_blank" style="color: var(--primary-light); display: block;">Twitter</a>` : ''}
+              ${profile.socialLinks.website ? `<a href="${profile.socialLinks.website}" target="_blank" style="color: var(--primary-light); display: block;">Website</a>` : ''}
+            </div>
+          ` : ''}
+        `;
+      }
+    }
+
+    // Edit profile button
+    document.getElementById('edit-profile-btn').addEventListener('click', () => {
+      const modal = document.getElementById('edit-profile-modal');
+      modal.classList.add('active');
+
+      // Show appropriate fields
+      if (profileData.role === 'student') {
+        document.getElementById('student-edit-fields').style.display = 'block';
+        document.getElementById('client-edit-fields').style.display = 'none';
+        
+        const profile = profileData.studentProfile;
+        document.getElementById('fullName').value = profile.fullName;
+        document.getElementById('skills').value = profile.skills.join(', ');
+        document.getElementById('bio').value = profile.bio;
+        document.getElementById('portfolioLinks').value = profile.portfolioLinks.join(', ');
+        document.getElementById('availability').value = profile.availability;
+      } else if (profileData.role === 'client') {
+        document.getElementById('student-edit-fields').style.display = 'none';
+        document.getElementById('client-edit-fields').style.display = 'block';
+        
+        const profile = profileData.clientProfile;
+        document.getElementById('orgName').value = profile.orgName;
+        document.getElementById('orgDescription').value = profile.orgDescription;
+        document.getElementById('linkedin').value = profile.socialLinks?.linkedin || '';
+        document.getElementById('twitter').value = profile.socialLinks?.twitter || '';
+        document.getElementById('website').value = profile.socialLinks?.website || '';
+      }
+    });
+
+    // Close modal
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('edit-profile-modal').classList.remove('active');
+    });
+
+    // Submit edit form
+    document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData();
+      const imageFile = document.getElementById('userImage').files[0];
+      if (imageFile) {
+        formData.append('userImage', imageFile);
+      }
+
+      if (profileData.role === 'student') {
+        const studentProfile = {
+          fullName: document.getElementById('fullName').value,
+          skills: document.getElementById('skills').value.split(',').map(s => s.trim()),
+          bio: document.getElementById('bio').value,
+          portfolioLinks: document.getElementById('portfolioLinks').value.split(',').map(s => s.trim()),
+          availability: document.getElementById('availability').value
+        };
+        formData.append('studentProfile', JSON.stringify(studentProfile));
+      } else if (profileData.role === 'client') {
+        const clientProfile = {
+          orgName: document.getElementById('orgName').value,
+          orgDescription: document.getElementById('orgDescription').value,
+          socialLinks: {
+            linkedin: document.getElementById('linkedin').value || undefined,
+            twitter: document.getElementById('twitter').value || undefined,
+            website: document.getElementById('website').value || undefined
+          }
+        };
+        formData.append('clientProfile', JSON.stringify(clientProfile));
+      }
+
+      UI.showLoading();
+      try {
+        await api.updateUserProfile(user._id, formData);
+        UI.showAlert('Profile updated successfully!', 'success');
+        document.getElementById('edit-profile-modal').classList.remove('active');
+        loadProfile();
+      } catch (error) {
+        UI.showAlert(error.message || 'Failed to update profile', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    });
+
+    // Initial load
+    loadProfile();
+  </script>
+</body>
+</html>

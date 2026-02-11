@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Dashboard - SkillBridge</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">SkillBridge</div>
+      <ul class="nav-links"></ul>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 2rem 0;">
+      <div class="container">
+        <div class="flex-between mb-2">
+          <h1 style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Client Dashboard</h1>
+          <div id="user-info"></div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-3 mb-2">
+          <div class="card text-center">
+            <h3 style="font-size: 2.5rem; color: var(--primary-light);" id="total-projects">0</h3>
+            <p class="text-muted">Total Projects</p>
+          </div>
+          <div class="card text-center">
+            <h3 style="font-size: 2.5rem; color: var(--success-color);" id="open-projects">0</h3>
+            <p class="text-muted">Open Projects</p>
+          </div>
+          <div class="card text-center">
+            <h3 style="font-size: 2.5rem; color: var(--warning-color);" id="in-progress-projects">0</h3>
+            <p class="text-muted">In Progress</p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-2">
+          <h2 class="mb-1">Quick Actions</h2>
+          <div class="flex gap-1">
+            <button id="create-project-btn" class="btn btn-primary">Create New Project</button>
+            <a href="/profile.html" class="btn btn-outline">Edit Profile</a>
+          </div>
+        </div>
+
+        <!-- My Projects -->
+        <div class="card">
+          <h2 class="mb-1">My Projects</h2>
+          <div id="projects-container"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Create Project Modal -->
+  <div id="create-project-modal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <h2 class="mb-1">Create New Project</h2>
+      <form id="create-project-form">
+        <div class="form-group">
+          <label for="title">Project Title</label>
+          <input type="text" id="title" class="form-control" placeholder="e.g., Build a responsive website" required>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea id="description" class="form-control" placeholder="Describe your project in detail..." required></textarea>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="form-group">
+            <label for="budget">Budget ($)</label>
+            <input type="number" id="budget" class="form-control" placeholder="1000" required min="1">
+          </div>
+
+          <div class="form-group">
+            <label for="deadline">Deadline</label>
+            <input type="date" id="deadline" class="form-control" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="requiredSkills">Required Skills (comma-separated)</label>
+          <input type="text" id="requiredSkills" class="form-control" placeholder="JavaScript, React, Node.js" required>
+        </div>
+
+        <div class="flex gap-1">
+          <button type="submit" class="btn btn-primary">Create Project</button>
+          <button type="button" class="btn btn-outline" id="close-modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    // Ensure client is logged in
+    if (!auth.requireRole('client')) {
+      throw new Error('Access denied');
+    }
+
+    const user = auth.getUser();
+    let projects = [];
+
+    // Display user info
+    document.getElementById('user-info').innerHTML = `
+      <div style="text-align: right;">
+        <p style="font-weight: 600; color: var(--text-primary);">${user.username}</p>
+        <p class="text-muted" style="font-size: 0.875rem;">${user.email}</p>
+      </div>
+    `;
+
+    // Set minimum date for deadline to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('deadline').min = today;
+
+    async function loadProjects() {
+      UI.showLoading();
+      try {
+        const response = await api.getAllProjects();
+        const allProjects = response.data || response.projects || response;
+        // Filter to only show user's projects
+        projects = allProjects.filter(p => p.createdBy === user._id || p.createdBy?._id === user._id);
+        updateStats();
+        renderProjects();
+      } catch (error) {
+        UI.showAlert('Failed to load projects', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('total-projects').textContent = projects.length;
+      document.getElementById('open-projects').textContent = 
+        projects.filter(p => p.status === 'open').length;
+      document.getElementById('in-progress-projects').textContent = 
+        projects.filter(p => p.status === 'in-progress').length;
+    }
+
+    function renderProjects() {
+      const container = document.getElementById('projects-container');
+      
+      if (projects.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">You haven\'t created any projects yet. Click "Create New Project" to get started.</p>';
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="grid grid-2">
+          ${projects.map(project => `
+            <div class="card">
+              <div class="flex-between mb-1">
+                <h3 style="color: var(--primary-light);">${project.title}</h3>
+                <span class="badge ${UI.getStatusBadgeClass(project.status)}">${project.status}</span>
+              </div>
+              <p class="text-muted mb-1">${UI.truncateText(project.description, 100)}</p>
+              <div class="mb-1">
+                ${UI.renderSkillTags(project.requiredSkills)}
+              </div>
+              <div class="flex-between">
+                <div>
+                  <strong style="color: var(--success-color);">${UI.formatCurrency(project.budget)}</strong>
+                  <p class="text-muted" style="font-size: 0.875rem;">Deadline: ${UI.formatDate(project.deadline)}</p>
+                </div>
+              </div>
+              <div class="flex gap-1 mt-1">
+                <a href="/project-detail.html?id=${project._id}" class="btn btn-primary">View Details</a>
+                <button class="btn btn-outline" onclick="viewApplications('${project._id}')">Applications</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function viewApplications(projectId) {
+      window.location.href = `/applications.html?projectId=${projectId}`;
+    }
+
+    // Show create project modal
+    document.getElementById('create-project-btn').addEventListener('click', () => {
+      document.getElementById('create-project-modal').classList.add('active');
+    });
+
+    // Close modal
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('create-project-modal').classList.remove('active');
+      document.getElementById('create-project-form').reset();
+    });
+
+    // Create project form submission
+    document.getElementById('create-project-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const projectData = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        budget: parseFloat(document.getElementById('budget').value),
+        deadline: new Date(document.getElementById('deadline').value).toISOString(),
+        requiredSkills: document.getElementById('requiredSkills').value.split(',').map(s => s.trim()),
+        status: 'open'
+      };
+
+      UI.showLoading();
+      try {
+        await api.createProject(projectData);
+        UI.showAlert('Project created successfully!', 'success');
+        document.getElementById('create-project-modal').classList.remove('active');
+        document.getElementById('create-project-form').reset();
+        loadProjects();
+      } catch (error) {
+        UI.showAlert(error.message || 'Failed to create project', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    });
+
+    // Initial load
+    loadProjects();
+  </script>
+</body>
+</html>

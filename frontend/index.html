@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillBridge - Connect Students with Clients</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">SkillBridge</div>
+      <ul class="nav-links">
+        <li><a href="/index.html">Home</a></li>
+        <li><a href="/projects.html">Projects</a></li>
+        <li><a href="/login.html">Login</a></li>
+        <li><a href="/register.html">Register</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Bridge the Gap Between Talent and Opportunity</h1>
+        <p>Connect skilled students with exciting projects from clients worldwide. Build your portfolio, gain experience, and earn money.</p>
+        <div class="flex-center gap-1" style="justify-content: center;">
+          <a href="/register.html" class="btn btn-primary">Get Started</a>
+          <a href="/projects.html" class="btn btn-outline">Browse Projects</a>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 4rem 0;">
+      <div class="container">
+        <h2 class="text-center mb-2" style="font-size: 2.5rem;">How It Works</h2>
+        <div class="grid grid-3">
+          <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎓</div>
+            <h3 style="margin-bottom: 1rem; color: var(--primary-light);">For Students</h3>
+            <p class="text-muted">Create your profile, showcase your skills, and apply to projects that match your expertise. Build your portfolio and gain real-world experience.</p>
+          </div>
+          <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">💼</div>
+            <h3 style="margin-bottom: 1rem; color: var(--secondary-color);">For Clients</h3>
+            <p class="text-muted">Post your projects, review applications from talented students, and hire the perfect match for your needs. Get quality work at great rates.</p>
+          </div>
+          <div class="card text-center">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🤝</div>
+            <h3 style="margin-bottom: 1rem; color: var(--accent-color);">Collaborate</h3>
+            <p class="text-muted">Work together seamlessly. Students deliver exceptional work, clients provide feedback and reviews. Build lasting professional relationships.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 4rem 0; background: var(--bg-secondary);">
+      <div class="container">
+        <h2 class="text-center mb-2" style="font-size: 2.5rem;">Why Choose SkillBridge?</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--primary-light);">✨ Verified Profiles</h3>
+            <p class="text-muted">All users are verified to ensure quality and trustworthiness.</p>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--primary-light);">🔒 Secure Platform</h3>
+            <p class="text-muted">Your data and transactions are protected with industry-standard security.</p>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--primary-light);">⭐ Review System</h3>
+            <p class="text-muted">Build your reputation with reviews from satisfied clients.</p>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom: 1rem; color: var(--primary-light);">💡 Diverse Projects</h3>
+            <p class="text-muted">Find projects in web development, design, writing, and more.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding: 4rem 0;">
+      <div class="container text-center">
+        <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Ready to Get Started?</h2>
+        <p style="font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem;">Join thousands of students and clients already using SkillBridge</p>
+        <div class="flex-center gap-1" style="justify-content: center;">
+          <a href="/register.html?role=student" class="btn btn-primary">Join as Student</a>
+          <a href="/register.html?role=client" class="btn btn-secondary">Join as Client</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="background: var(--bg-secondary); padding: 2rem 0; margin-top: 4rem; border-top: 1px solid var(--border-color);">
+    <div class="container text-center">
+      <div class="logo mb-1">SkillBridge</div>
+      <p class="text-muted">&copy; 2024 SkillBridge. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    // Redirect to dashboard if already logged in
+    if (auth.isAuthenticated()) {
+      const redirectBtn = document.createElement('div');
+      redirectBtn.style.cssText = 'position: fixed; top: 80px; right: 20px; z-index: 1000;';
+      redirectBtn.innerHTML = '<button class="btn btn-primary" onclick="auth.redirectToDashboard()">Go to Dashboard</button>';
+      document.body.appendChild(redirectBtn);
+    }
+  </script>
+</body>
+</html>

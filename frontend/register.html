@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - SkillBridge</title>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <nav>
+    <div class="container">
+      <div class="logo">SkillBridge</div>
+      <ul class="nav-links">
+        <li><a href="/index.html">Home</a></li>
+        <li><a href="/projects.html">Projects</a></li>
+        <li><a href="/login.html">Login</a></li>
+        <li><a href="/register.html">Register</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <section style="padding: 4rem 0;">
+      <div class="container">
+        <div style="max-width: 700px; margin: 0 auto;">
+          <div class="card">
+            <h1 class="text-center mb-2" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Create Account</h1>
+            
+            <form id="register-form">
+              <div class="form-group">
+                <label>I am a</label>
+                <select id="role" class="form-control" required>
+                  <option value="">Select your role</option>
+                  <option value="student">Student</option>
+                  <option value="client">Client</option>
+                </select>
+              </div>
+
+              <div class="grid grid-2">
+                <div class="form-group">
+                  <label for="username">Username</label>
+                  <input type="text" id="username" class="form-control" placeholder="Choose a username" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email</label>
+                  <input type="email" id="email" class="form-control" placeholder="Your email" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Create a password" required minlength="6">
+              </div>
+
+              <div class="form-group">
+                <label for="userImage">Profile Image</label>
+                <input type="file" id="userImage" class="form-control" accept="image/*" required>
+              </div>
+
+              <!-- Student-specific fields -->
+              <div id="student-fields" style="display: none;">
+                <h3 style="color: var(--primary-light); margin-bottom: 1rem;">Student Profile</h3>
+                
+                <div class="form-group">
+                  <label for="fullName">Full Name</label>
+                  <input type="text" id="fullName" class="form-control" placeholder="Your full name">
+                </div>
+
+                <div class="form-group">
+                  <label for="skills">Skills (comma-separated)</label>
+                  <input type="text" id="skills" class="form-control" placeholder="e.g., JavaScript, Python, React">
+                </div>
+
+                <div class="form-group">
+                  <label for="bio">Bio</label>
+                  <textarea id="bio" class="form-control" placeholder="Tell us about yourself"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="portfolioLinks">Portfolio Links (comma-separated)</label>
+                  <input type="text" id="portfolioLinks" class="form-control" placeholder="https://github.com/you, https://portfolio.com">
+                </div>
+
+                <div class="form-group">
+                  <label for="availability">Availability</label>
+                  <select id="availability" class="form-control">
+                    <option value="">Select availability</option>
+                    <option value="10hrs/week">10 hours/week</option>
+                    <option value="15hrs/week">15 hours/week</option>
+                    <option value="20hrs/week">20 hours/week</option>
+                    <option value="24hrs/week">24+ hours/week</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Client-specific fields -->
+              <div id="client-fields" style="display: none;">
+                <h3 style="color: var(--secondary-color); margin-bottom: 1rem;">Client Profile</h3>
+                
+                <div class="form-group">
+                  <label for="orgName">Organization Name</label>
+                  <input type="text" id="orgName" class="form-control" placeholder="Your company name">
+                </div>
+
+                <div class="form-group">
+                  <label for="orgDescription">Organization Description</label>
+                  <textarea id="orgDescription" class="form-control" placeholder="Tell us about your organization"></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="linkedin">LinkedIn (optional)</label>
+                  <input type="url" id="linkedin" class="form-control" placeholder="https://linkedin.com/company/...">
+                </div>
+
+                <div class="form-group">
+                  <label for="twitter">Twitter (optional)</label>
+                  <input type="url" id="twitter" class="form-control" placeholder="https://twitter.com/...">
+                </div>
+
+                <div class="form-group">
+                  <label for="website">Website (optional)</label>
+                  <input type="url" id="website" class="form-control" placeholder="https://yourcompany.com">
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+            </form>
+
+            <p class="text-center mt-1 text-muted">
+              Already have an account? <a href="/login.html" style="color: var(--primary-light); text-decoration: none;">Login here</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (auth.isAuthenticated()) {
+      auth.redirectToDashboard();
+    }
+
+    // Check for role in URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const roleParam = urlParams.get('role');
+    if (roleParam) {
+      document.getElementById('role').value = roleParam;
+      toggleRoleFields(roleParam);
+    }
+
+    // Toggle role-specific fields
+    document.getElementById('role').addEventListener('change', (e) => {
+      toggleRoleFields(e.target.value);
+    });
+
+    function toggleRoleFields(role) {
+      const studentFields = document.getElementById('student-fields');
+      const clientFields = document.getElementById('client-fields');
+      
+      studentFields.style.display = role === 'student' ? 'block' : 'none';
+      clientFields.style.display = role === 'client' ? 'block' : 'none';
+
+      // Set required attributes
+      if (role === 'student') {
+        document.getElementById('fullName').required = true;
+        document.getElementById('skills').required = true;
+        document.getElementById('bio').required = true;
+        document.getElementById('portfolioLinks').required = true;
+        document.getElementById('availability').required = true;
+        document.getElementById('orgName').required = false;
+        document.getElementById('orgDescription').required = false;
+      } else if (role === 'client') {
+        document.getElementById('fullName').required = false;
+        document.getElementById('skills').required = false;
+        document.getElementById('bio').required = false;
+        document.getElementById('portfolioLinks').required = false;
+        document.getElementById('availability').required = false;
+        document.getElementById('orgName').required = true;
+        document.getElementById('orgDescription').required = true;
+      }
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const role = document.getElementById('role').value;
+      const formData = new FormData();
+      
+      // Basic fields
+      formData.append('username', document.getElementById('username').value);
+      formData.append('email', document.getElementById('email').value);
+      formData.append('password', document.getElementById('password').value);
+      formData.append('role', role);
+      formData.append('userImage', document.getElementById('userImage').files[0]);
+
+      // Role-specific fields
+      if (role === 'student') {
+        const studentProfile = {
+          fullName: document.getElementById('fullName').value,
+          skills: document.getElementById('skills').value.split(',').map(s => s.trim()),
+          bio: document.getElementById('bio').value,
+          portfolioLinks: document.getElementById('portfolioLinks').value.split(',').map(s => s.trim()),
+          availability: document.getElementById('availability').value
+        };
+        formData.append('studentProfile', JSON.stringify(studentProfile));
+      } else if (role === 'client') {
+        const clientProfile = {
+          orgName: document.getElementById('orgName').value,
+          orgDescription: document.getElementById('orgDescription').value,
+          socialLinks: {
+            linkedin: document.getElementById('linkedin').value || undefined,
+            twitter: document.getElementById('twitter').value || undefined,
+            website: document.getElementById('website').value || undefined
+          }
+        };
+        formData.append('clientProfile', JSON.stringify(clientProfile));
+      }
+
+      UI.showLoading();
+
+      try {
+        const response = await api.register(formData);
+        UI.showAlert('Registration successful! Please login.', 'success');
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 2000);
+      } catch (error) {
+        UI.showAlert(error.message || 'Registration failed', 'error');
+      } finally {
+        UI.hideLoading();
+      }
+    });
+  </script>
+</body>
+</html>
