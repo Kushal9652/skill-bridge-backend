@@ -1,1 +1,15 @@
 .DS_STORE
+node_modules/
+.env
+*.log
+dist/
+build/
+.cache/
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.tmp/
+tmp/
